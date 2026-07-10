@@ -46,11 +46,14 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error: unknown) {
       if (
         axios.isAxiosError(error) &&
-        error.response?.status === 401
-      ) {
+        (
+            error.response?.status === 401 ||
+            error.response?.status === 403
+        )
+        ) {
         user.value = null
         return
-      }
+        }
 
       throw error
     } finally {

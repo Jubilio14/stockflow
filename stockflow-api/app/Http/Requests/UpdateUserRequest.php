@@ -6,23 +6,28 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
-class StoreUserRequest extends FormRequest
+class UpdateUserRequest extends FormRequest
 {
-    /**
-     * Authorization sudah ditangani oleh middleware role:owner.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'name' => trim((string) $this->name),
+            'email' => strtolower(trim((string) $this->email)),
+        ]);
+    }
+
     /**
-     * Aturan validasi akun pegawai baru.
-     *
      * @return array<string, mixed>
      */
     public function rules(): array
     {
+        $user = $this->route('user');
+
         return [
             'name' => [
                 'required',
@@ -34,15 +39,7 @@ class StoreUserRequest extends FormRequest
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email'),
-            ],
-
-            'password' => [
-                'required',
-                'confirmed',
-                Password::min(8)
-                    ->letters()
-                    ->numbers(),
+                Rule::unique('users', 'email')->ignore($user),
             ],
 
             'role' => [
@@ -53,16 +50,17 @@ class StoreUserRequest extends FormRequest
                 ]),
             ],
 
-            'is_active' => [
-                'sometimes',
-                'boolean',
+            'password' => [
+                'nullable',
+                'confirmed',
+                Password::min(8)
+                    ->letters()
+                    ->numbers(),
             ],
         ];
     }
 
     /**
-     * Pesan validasi dalam Bahasa Indonesia.
-     *
      * @return array<string, string>
      */
     public function messages(): array
@@ -75,13 +73,13 @@ class StoreUserRequest extends FormRequest
             'email.email' => 'Format email tidak valid.',
             'email.unique' => 'Email sudah digunakan oleh user lain.',
 
-            'password.required' => 'Password wajib diisi.',
-            'password.confirmed' => 'Konfirmasi password tidak sesuai.',
-
             'role.required' => 'Role wajib dipilih.',
             'role.in' => 'Role hanya boleh Admin atau Cashier.',
 
-            'is_active.boolean' => 'Status aktif harus berupa true atau false.',
+            'password.confirmed' => 'Konfirmasi password tidak sesuai.',
+            'password.min' => 'Password minimal terdiri dari 8 karakter.',
+            'password.letters' => 'Password harus memiliki huruf.',
+            'password.numbers' => 'Password harus memiliki angka.',
         ];
     }
 }

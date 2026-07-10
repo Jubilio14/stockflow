@@ -12,7 +12,10 @@ Route::get('/hello', function () {
     ]);
 });
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+Route::middleware([
+    'auth:sanctum',
+    'active.user',
+])->get('/user', function (Request $request) {
     return response()->json([
         'user' => $request->user()->only([
             'id',
@@ -26,6 +29,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::middleware([
     'auth:sanctum',
+    'active.user',
     'role:owner',
 ])
     ->prefix('users')
@@ -38,5 +42,15 @@ Route::middleware([
         Route::post('/', [
             UserController::class,
             'store',
+        ]);
+
+        Route::put('/{user}', [
+            UserController::class,
+            'update',
+        ]);
+
+        Route::patch('/{user}/toggle-status', [
+            UserController::class,
+            'toggleStatus',
         ]);
     });

@@ -62,3 +62,21 @@ export interface CreateUserResponse {
 }
 
 export type UserValidationErrors = Record<string, string[]>
+
+export interface UpdateUserPayload {
+  name: string
+  email: string
+  role: StaffRole
+  password?: string
+  password_confirmation?: string
+}
+
+export interface UpdateUserResponse {
+  message: string
+  user: UserItem
+}
+
+export interface ToggleUserStatusResponse {
+  message: string
+  user: UserItem
+}

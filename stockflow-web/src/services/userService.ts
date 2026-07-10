@@ -4,6 +4,9 @@ import type {
   CreateUserPayload,
   CreateUserResponse,
   PaginatedUsersResponse,
+  ToggleUserStatusResponse,
+  UpdateUserPayload,
+  UpdateUserResponse,
   UserFilters,
 } from '@/types/user'
 
@@ -36,6 +39,28 @@ export async function createUser(
   const response = await api.post<CreateUserResponse>(
     '/api/users',
     payload,
+  )
+
+  return response.data
+}
+
+export async function updateUser(
+  userId: number,
+  payload: UpdateUserPayload,
+): Promise<UpdateUserResponse> {
+  const response = await api.put<UpdateUserResponse>(
+    `/api/users/${userId}`,
+    payload,
+  )
+
+  return response.data
+}
+
+export async function toggleUserStatus(
+  userId: number,
+): Promise<ToggleUserStatusResponse> {
+  const response = await api.patch<ToggleUserStatusResponse>(
+    `/api/users/${userId}/toggle-status`,
   )
 
   return response.data

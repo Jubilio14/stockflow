@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { toast } from 'vue-sonner'
+import Swal from 'sweetalert2'
 import {
   onBeforeUnmount,
   onMounted,
@@ -12,12 +13,15 @@ import {
 import {
   createUser,
   getUsers,
+  toggleUserStatus,
+  updateUser,
 } from '@/services/userService'
 
 import type {
   CreateUserPayload,
   PaginatedUsersResponse,
   StaffRole,
+  UpdateUserPayload,
   UserFilters,
   UserItem,
   UserValidationErrors,
@@ -56,6 +60,20 @@ const createForm = reactive<CreateUserPayload>({
   password_confirmation: '',
   role: 'cashier',
   is_active: true,
+})
+
+const isEditModalOpen = ref(false)
+const isUpdating = ref(false)
+const editingUserId = ref<number | null>(null)
+const editErrorMessage = ref('')
+const editFormErrors = ref<UserValidationErrors>({})
+
+const editForm = reactive<UpdateUserPayload>({
+  name: '',
+  email: '',
+  role: 'cashier',
+  password: '',
+  password_confirmation: '',
 })
 
 async function loadUsers(): Promise<void> {
@@ -291,17 +309,29 @@ async function submitCreateUser(): Promise<void> {
 }
 
 function handleEscape(event: KeyboardEvent): void {
-  if (
-    event.key === 'Escape' &&
-    isCreateModalOpen.value
-  ) {
+  if (event.key !== 'Escape') {
+    return
+  }
+
+  if (isCreateModalOpen.value) {
     closeCreateModal()
+    return
+  }
+
+  if (isEditModalOpen.value) {
+    closeEditModal()
   }
 }
 
-watch(isCreateModalOpen, (isOpen) => {
-  document.body.style.overflow = isOpen ? 'hidden' : ''
-})
+watch(
+  [isCreateModalOpen, isEditModalOpen],
+  ([isCreateOpen, isEditOpen]) => {
+    document.body.style.overflow =
+      isCreateOpen || isEditOpen
+        ? 'hidden'
+        : ''
+  },
+)
 
 onMounted(() => {
   loadUsers()
@@ -312,6 +342,227 @@ onBeforeUnmount(() => {
   document.body.style.overflow = ''
   window.removeEventListener('keydown', handleEscape)
 })
+
+function openEditModal(user: UserItem): void {
+  if (user.role === 'owner') {
+    return
+  }
+
+  editingUserId.value = user.id
+
+  editForm.name = user.name
+  editForm.email = user.email
+  editForm.role = user.role
+  editForm.password = ''
+  editForm.password_confirmation = ''
+
+  editFormErrors.value = {}
+  editErrorMessage.value = ''
+  isEditModalOpen.value = true
+}
+
+function resetEditForm(): void {
+  editingUserId.value = null
+
+  editForm.name = ''
+  editForm.email = ''
+  editForm.role = 'cashier'
+  editForm.password = ''
+  editForm.password_confirmation = ''
+
+  editFormErrors.value = {}
+  editErrorMessage.value = ''
+}
+
+function closeEditModal(): void {
+  if (isUpdating.value) {
+    return
+  }
+
+  isEditModalOpen.value = false
+  resetEditForm()
+}
+
+function validateEditForm(): boolean {
+  const errors: UserValidationErrors = {}
+
+  if (!editForm.name.trim()) {
+    errors.name = ['Nama wajib diisi.']
+  }
+
+  if (!editForm.email.trim()) {
+    errors.email = ['Email wajib diisi.']
+  }
+
+  if (
+    editForm.password &&
+    editForm.password.length < 8
+  ) {
+    errors.password = [
+      'Password minimal terdiri dari 8 karakter.',
+    ]
+  }
+
+  if (
+    editForm.password &&
+    editForm.password !==
+      editForm.password_confirmation
+  ) {
+    errors.password_confirmation = [
+      'Konfirmasi password tidak sesuai.',
+    ]
+  }
+
+  editFormErrors.value = errors
+
+  return Object.keys(errors).length === 0
+}
+
+async function submitEditUser(): Promise<void> {
+  if (
+    editingUserId.value === null ||
+    !validateEditForm()
+  ) {
+    return
+  }
+
+  isUpdating.value = true
+  editErrorMessage.value = ''
+
+  try {
+    const payload: UpdateUserPayload = {
+      name: editForm.name.trim(),
+      email: editForm.email.trim(),
+      role: editForm.role,
+    }
+
+    if (editForm.password) {
+      payload.password = editForm.password
+      payload.password_confirmation =
+        editForm.password_confirmation
+    }
+
+    const response = await updateUser(
+      editingUserId.value,
+      payload,
+    )
+
+    isEditModalOpen.value = false
+    resetEditForm()
+
+    toast.success(response.message)
+
+    await loadUsers()
+  } catch (error: unknown) {
+    if (!axios.isAxiosError<ApiErrorResponse>(error)) {
+      editErrorMessage.value =
+        'Terjadi kesalahan yang tidak dikenali.'
+      return
+    }
+
+    if (!error.response) {
+      editErrorMessage.value =
+        'Tidak dapat terhubung ke server Laravel.'
+      return
+    }
+
+    const status = error.response.status
+    const data = error.response.data
+
+    if (status === 422) {
+      editFormErrors.value = data.errors ?? {}
+
+      if (
+        Object.keys(editFormErrors.value).length === 0
+      ) {
+        editErrorMessage.value =
+          data.message ?? 'Data user tidak valid.'
+      }
+
+      return
+    }
+
+    if (status === 409) {
+      editErrorMessage.value =
+        data.message ?? 'Data user tidak dapat diubah.'
+      return
+    }
+
+    if (status === 401 || status === 403) {
+      editErrorMessage.value =
+        data.message ?? 'Anda tidak memiliki akses.'
+      return
+    }
+
+    editErrorMessage.value =
+      data.message ?? 'User gagal diperbarui.'
+  } finally {
+    isUpdating.value = false
+  }
+}
+
+async function confirmToggleStatus(
+  user: UserItem,
+): Promise<void> {
+  if (user.role === 'owner') {
+    return
+  }
+
+  const willActivate = !user.is_active
+
+  const result = await Swal.fire({
+    title: willActivate
+      ? 'Aktifkan user?'
+      : 'Nonaktifkan user?',
+    text: willActivate
+      ? `${user.name} akan dapat login kembali.`
+      : `${user.name} tidak akan dapat mengakses StockFlow.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: willActivate
+      ? 'Ya, aktifkan'
+      : 'Ya, nonaktifkan',
+    cancelButtonText: 'Batal',
+    reverseButtons: true,
+  })
+
+  if (!result.isConfirmed) {
+    return
+  }
+
+  try {
+    Swal.fire({
+      title: 'Memproses...',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading()
+      },
+    })
+
+    const response = await toggleUserStatus(user.id)
+
+    await Swal.close()
+
+    toast.success(response.message)
+
+    await loadUsers()
+  } catch (error: unknown) {
+    await Swal.close()
+
+    if (
+      axios.isAxiosError<ApiErrorResponse>(error) &&
+      error.response?.data.message
+    ) {
+      toast.error(error.response.data.message)
+      return
+    }
+
+    toast.error(
+      'Status user gagal diperbarui.',
+    )
+  }
+}
 </script>
 
 <template>
@@ -410,6 +661,7 @@ onBeforeUnmount(() => {
                 <th>Role</th>
                 <th>Status</th>
                 <th>Tanggal Dibuat</th>
+                <th class="action-column">Aksi</th>
               </tr>
             </thead>
 
@@ -459,6 +711,45 @@ onBeforeUnmount(() => {
                       : '-'
                   }}
                 </td>
+
+                <td class="action-cell">
+                    <span
+                        v-if="user.role === 'owner'"
+                        class="owner-label"
+                    >
+                        Akun utama
+                    </span>
+
+                    <details v-else class="action-menu">
+                        <summary aria-label="Buka menu aksi">
+                        ⋮
+                        </summary>
+
+                        <div class="action-dropdown">
+                        <button
+                            type="button"
+                            @click="openEditModal(user)"
+                        >
+                            Edit User
+                        </button>
+
+                        <button
+                            type="button"
+                            :class="{
+                            'danger-action': user.is_active,
+                            'success-action': !user.is_active,
+                            }"
+                            @click="confirmToggleStatus(user)"
+                        >
+                            {{
+                            user.is_active
+                                ? 'Nonaktifkan'
+                                : 'Aktifkan'
+                            }}
+                        </button>
+                        </div>
+                    </details>
+                    </td>
               </tr>
             </tbody>
           </table>
@@ -690,6 +981,189 @@ onBeforeUnmount(() => {
             </section>
         </div>
         </Teleport>
+
+        <Teleport to="body">
+  <div
+    v-if="isEditModalOpen"
+    class="modal-backdrop"
+    @click.self="closeEditModal"
+  >
+    <section
+      class="modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-user-title"
+    >
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow">Akun Pegawai</p>
+          <h2 id="edit-user-title">Edit User</h2>
+          <p>
+            Perbarui informasi akun Admin atau Cashier.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="modal-close"
+          :disabled="isUpdating"
+          aria-label="Tutup modal"
+          @click="closeEditModal"
+        >
+          ×
+        </button>
+      </header>
+
+      <form
+        class="create-user-form"
+        novalidate
+        @submit.prevent="submitEditUser"
+      >
+        <div
+          v-if="editErrorMessage"
+          class="alert-error"
+        >
+          {{ editErrorMessage }}
+        </div>
+
+        <div class="modal-form-grid">
+          <div class="form-group full-column">
+            <label for="edit-name">Nama</label>
+
+            <input
+              id="edit-name"
+              v-model="editForm.name"
+              type="text"
+              autocomplete="name"
+            />
+
+            <span
+              v-if="editFormErrors.name?.[0]"
+              class="field-error"
+            >
+              {{ editFormErrors.name[0] }}
+            </span>
+          </div>
+
+          <div class="form-group full-column">
+            <label for="edit-email">Email</label>
+
+            <input
+              id="edit-email"
+              v-model="editForm.email"
+              type="email"
+              autocomplete="email"
+            />
+
+            <span
+              v-if="editFormErrors.email?.[0]"
+              class="field-error"
+            >
+              {{ editFormErrors.email[0] }}
+            </span>
+          </div>
+
+          <div class="form-group full-column">
+            <label for="edit-role">Role</label>
+
+            <select
+              id="edit-role"
+              v-model="editForm.role"
+            >
+              <option value="admin">Admin</option>
+              <option value="cashier">Cashier</option>
+            </select>
+
+            <span
+              v-if="editFormErrors.role?.[0]"
+              class="field-error"
+            >
+              {{ editFormErrors.role[0] }}
+            </span>
+          </div>
+
+          <div class="password-information full-column">
+            Kosongkan password apabila tidak ingin
+            mengganti password lama.
+          </div>
+
+          <div class="form-group">
+            <label for="edit-password">
+              Password Baru
+            </label>
+
+            <input
+              id="edit-password"
+              v-model="editForm.password"
+              type="password"
+              autocomplete="new-password"
+              placeholder="Opsional"
+            />
+
+            <span
+              v-if="editFormErrors.password?.[0]"
+              class="field-error"
+            >
+              {{ editFormErrors.password[0] }}
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-password-confirmation">
+              Konfirmasi Password
+            </label>
+
+            <input
+              id="edit-password-confirmation"
+              v-model="
+                editForm.password_confirmation
+              "
+              type="password"
+              autocomplete="new-password"
+              placeholder="Ulangi password baru"
+            />
+
+            <span
+              v-if="
+                editFormErrors
+                  .password_confirmation?.[0]
+              "
+              class="field-error"
+            >
+              {{
+                editFormErrors
+                  .password_confirmation[0]
+              }}
+            </span>
+          </div>
+        </div>
+
+        <footer class="modal-actions">
+          <button
+            type="button"
+            class="cancel-button"
+            :disabled="isUpdating"
+            @click="closeEditModal"
+          >
+            Batal
+          </button>
+
+          <button
+            type="submit"
+            class="submit-button"
+            :disabled="isUpdating"
+          >
+            {{
+              isUpdating
+                ? 'Menyimpan...'
+                : 'Simpan Perubahan'
+            }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+</Teleport>
   </main>
 </template>
 
@@ -963,6 +1437,100 @@ td {
   font-size: 13px;
 }
 
+.action-column,
+.action-cell {
+  width: 110px;
+  text-align: right;
+}
+
+.owner-label {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.action-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.action-menu summary {
+  width: 36px;
+  height: 36px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 9px;
+  background: #f1f5f9;
+  color: #475569;
+
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+
+  cursor: pointer;
+  list-style: none;
+}
+
+.action-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.action-menu summary:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.action-dropdown {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  right: 0;
+
+  width: 160px;
+  overflow: hidden;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: white;
+  box-shadow: 0 14px 35px rgb(15 23 42 / 14%);
+}
+
+.action-dropdown button {
+  width: 100%;
+  padding: 11px 13px;
+
+  border: 0;
+  background: white;
+  color: #334155;
+
+  text-align: left;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.action-dropdown button:hover {
+  background: #f8fafc;
+}
+
+.action-dropdown .danger-action {
+  color: #dc2626;
+}
+
+.action-dropdown .success-action {
+  color: #047857;
+}
+
+.password-information {
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .modal-backdrop {
   position: fixed;
   z-index: 1000;
@@ -1137,6 +1705,8 @@ td {
   .submit-button {
     width: 100%;
   }
+
+  
 }
 
 @media (max-width: 900px) {
