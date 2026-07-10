@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PurchaseController;
+use App\Http\Controllers\Api\StockAdjustmentController;
 use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UserController;
@@ -159,5 +160,20 @@ Route::middleware([
     Route::get(
         '/stock-movements',
         [StockMovementController::class, 'index']
+    );
+
+    Route::get(
+        '/stock-adjustments',
+        [StockAdjustmentController::class, 'index']
+    );
+
+    Route::post(
+        '/stock-adjustments',
+        [StockAdjustmentController::class, 'store']
+    );
+
+    Route::get(
+        '/stock-adjustments/{stockAdjustment}',
+        [StockAdjustmentController::class, 'show']
     );
 });
