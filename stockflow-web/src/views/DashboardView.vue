@@ -1,167 +1,172 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+
 import { useAuthStore } from '@/stores/auth'
-import { RouterLink } from 'vue-router'
 
 const authStore = useAuthStore()
-const router = useRouter()
 
-async function handleLogout(): Promise<void> {
-  await authStore.logout()
-  await router.replace({ name: 'login' })
-}
+const roleName = computed(() => {
+  const labels = {
+    owner: 'Owner',
+    admin: 'Admin',
+    cashier: 'Cashier',
+  }
+
+  const role = authStore.user?.role
+
+  return role ? labels[role] : '-'
+})
 </script>
 
 <template>
-  <main class="dashboard-page">
-    <section class="dashboard-card">
+  <section class="dashboard-page">
+    <header class="welcome-card">
       <div>
-        <p class="eyebrow">Authentication berhasil</p>
-        <h1>Selamat datang, {{ authStore.user?.name }}</h1>
+        <p class="eyebrow">Selamat datang</p>
 
-        <p class="description">
-          Vue berhasil mengenali session login yang dibuat oleh Laravel.
+        <h2>
+          Halo, {{ authStore.user?.name }}
+        </h2>
+
+        <p>
+          Anda masuk sebagai
+          <strong>{{ roleName }}</strong>.
+          Gunakan menu di sebelah kiri untuk
+          mengakses fitur StockFlow.
         </p>
       </div>
 
-      <dl class="user-information">
-        <div>
-          <dt>Email</dt>
-          <dd>{{ authStore.user?.email }}</dd>
-        </div>
-
-        <div>
-          <dt>Role</dt>
-          <dd>{{ authStore.user?.role }}</dd>
-        </div>
-
-        <div>
-          <dt>Status</dt>
-          <dd>
-            {{ authStore.user?.is_active ? 'Aktif' : 'Tidak aktif' }}
-          </dd>
-        </div>
-      </dl>
-
-      <div class="dashboard-actions">
-        <RouterLink
-            v-if="authStore.user?.role === 'owner'"
-            to="/users"
-            class="users-link"
-        >
-            Kelola User
-        </RouterLink>
-
-        <button
-            type="button"
-            class="logout-button"
-            :disabled="authStore.isLoading"
-            @click="handleLogout"
-        >
-            {{ authStore.isLoading ? 'Keluar...' : 'Logout' }}
-        </button>
+      <div class="welcome-badge">
+        {{ roleName }}
       </div>
+    </header>
+
+    <section class="information-grid">
+      <article class="information-card">
+        <span>Status Akun</span>
+        <strong>Aktif</strong>
+        <p>Akun dapat mengakses sistem.</p>
+      </article>
+
+      <article class="information-card">
+        <span>Email</span>
+        <strong>{{ authStore.user?.email }}</strong>
+        <p>Email yang digunakan untuk login.</p>
+      </article>
+
+      <article class="information-card">
+        <span>Modul Berikutnya</span>
+        <strong>Manajemen Produk</strong>
+        <p>
+          Produk, kategori, harga, dan stok.
+        </p>
+      </article>
     </section>
-  </main>
+  </section>
 </template>
 
 <style scoped>
 .dashboard-page {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: #f1f5f9;
+  width: 100%;
 }
 
-.dashboard-card {
-  width: min(100%, 720px);
-  padding: 40px;
-  border: 1px solid #e2e8f0;
-  border-radius: 22px;
-  background: white;
-  box-shadow: 0 24px 70px rgb(15 23 42 / 8%);
+.welcome-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+
+  margin-bottom: 22px;
+  padding: 28px;
+
+  border: 1px solid #d1fae5;
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ecfdf5,
+      #ffffff
+    );
 }
 
 .eyebrow {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   color: #047857;
-  font-size: 13px;
-  font-weight: 700;
+
+  font-size: 12px;
+  font-weight: 750;
   text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
 
-h1 {
+.welcome-card h2 {
   margin: 0;
-  font-size: 32px;
+  color: #0f172a;
+  font-size: 28px;
 }
 
-.description {
-  margin: 12px 0 0;
+.welcome-card p:not(.eyebrow) {
+  margin: 10px 0 0;
   color: #64748b;
 }
 
-.user-information {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin: 32px 0;
-}
+.welcome-badge {
+  padding: 10px 16px;
 
-.user-information div {
-  padding: 18px;
-  border-radius: 14px;
-  background: #f8fafc;
-}
-
-.user-information dt {
-  margin-bottom: 7px;
-  color: #64748b;
-  font-size: 13px;
-}
-
-.user-information dd {
-  margin: 0;
-  font-weight: 700;
-  overflow-wrap: anywhere;
-  text-transform: capitalize;
-}
-
-.logout-button {
-  padding: 11px 18px;
-  border: 0;
-  border-radius: 10px;
-  background: #dc2626;
-  color: white;
-  font-weight: 700;
-}
-
-.logout-button:disabled {
-  opacity: 0.6;
-}
-
-.dashboard-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.users-link {
-  display: inline-flex;
-  align-items: center;
-  padding: 11px 18px;
-  border-radius: 10px;
+  border-radius: 999px;
   background: #047857;
   color: white;
-  font-weight: 700;
-  text-decoration: none;
+
+  font-size: 13px;
+  font-weight: 750;
 }
 
-@media (max-width: 640px) {
-  .dashboard-card {
-    padding: 28px 22px;
+.information-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.information-card {
+  padding: 22px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+
+  background: white;
+}
+
+.information-card span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.information-card strong {
+  display: block;
+  margin-top: 8px;
+
+  overflow-wrap: anywhere;
+
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.information-card p {
+  margin: 8px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .welcome-card {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
-  .user-information {
+  .information-grid {
     grid-template-columns: 1fr;
   }
 }

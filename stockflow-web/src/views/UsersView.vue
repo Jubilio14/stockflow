@@ -1169,14 +1169,12 @@ async function confirmToggleStatus(
 
 <style scoped>
 .users-page {
-  min-height: 100vh;
-  padding: 40px 24px;
-  background: #f1f5f9;
+  width: 100%;
 }
 
 .page-container {
-  width: min(100%, 1180px);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 }
 
 .page-header {
