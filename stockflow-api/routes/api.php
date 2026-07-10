@@ -22,3 +22,18 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
         ]),
     ]);
 });
+
+Route::middleware([
+    'auth:sanctum',
+    'role:owner',
+])->get('/owner/check', function (Request $request) {
+    return response()->json([
+        'message' => 'Anda memiliki akses sebagai Owner.',
+        'user' => $request->user()->only([
+            'id',
+            'name',
+            'email',
+            'role',
+        ]),
+    ]);
+});
