@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -51,6 +52,34 @@ Route::middleware([
 
         Route::patch('/{user}/toggle-status', [
             UserController::class,
+            'toggleStatus',
+        ]);
+    });
+
+Route::middleware([
+    'auth:sanctum',
+    'active.user',
+    'role:owner,admin',
+])
+    ->prefix('categories')
+    ->group(function () {
+        Route::get('/', [
+            CategoryController::class,
+            'index',
+        ]);
+
+        Route::post('/', [
+            CategoryController::class,
+            'store',
+        ]);
+
+        Route::put('/{category}', [
+            CategoryController::class,
+            'update',
+        ]);
+
+        Route::patch('/{category}/toggle-status', [
+            CategoryController::class,
             'toggleStatus',
         ]);
     });
