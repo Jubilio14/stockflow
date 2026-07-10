@@ -82,6 +82,18 @@ const router = createRouter({
             roles: ['owner', 'admin'],
           },
         },
+
+        {
+          path: 'suppliers',
+          name: 'suppliers',
+          component: () =>
+            import('@/views/SuppliersView.vue'),
+
+          meta: {
+            title: 'Manajemen Supplier',
+            roles: ['owner', 'admin'],
+          },
+        },
       ],
     },
 

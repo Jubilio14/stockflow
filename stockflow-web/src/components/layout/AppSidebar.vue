@@ -44,6 +44,11 @@ const navigationItems: NavigationItem[] = [
     routeName: 'products',
     roles: ['owner', 'admin'],
   },
+  {
+    label: 'Supplier',
+    routeName: 'suppliers',
+    roles: ['owner', 'admin'],
+  },
 ]
 
 const visibleNavigationItems = computed(() => {
