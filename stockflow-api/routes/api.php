@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\PurchaseController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
@@ -137,5 +138,20 @@ Route::middleware([
     Route::patch(
         '/suppliers/{supplier}/toggle-status',
         [SupplierController::class, 'toggleStatus']
+    );
+
+    Route::get(
+        '/purchases',
+        [PurchaseController::class, 'index']
+    );
+
+    Route::post(
+        '/purchases',
+        [PurchaseController::class, 'store']
+    );
+
+    Route::get(
+        '/purchases/{purchase}',
+        [PurchaseController::class, 'show']
     );
 });

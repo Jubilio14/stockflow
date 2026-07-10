@@ -94,6 +94,41 @@ const router = createRouter({
             roles: ['owner', 'admin'],
           },
         },
+
+        {
+          path: 'purchases',
+          name: 'purchases',
+          component: () =>
+            import('@/views/PurchasesView.vue'),
+
+          meta: {
+            title: 'Pembelian',
+            roles: ['owner', 'admin'],
+          },
+        },
+
+        {
+          path: 'purchases/create',
+          name: 'purchases.create',
+          component: () =>
+            import('@/views/PurchaseCreateView.vue'),
+
+          meta: {
+            title: 'Catat Pembelian',
+            roles: ['owner', 'admin'],
+          },
+        },
+        {
+          path: 'purchases/:id',
+          name: 'purchases.show',
+          component: () =>
+            import('@/views/PurchaseDetailView.vue'),
+
+          meta: {
+            title: 'Detail Pembelian',
+            roles: ['owner', 'admin'],
+          },
+        },
       ],
     },
 
