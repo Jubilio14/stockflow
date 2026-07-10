@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-
 import { useAuthStore } from '@/stores/auth'
+import { RouterLink } from 'vue-router'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -42,6 +42,25 @@ async function handleLogout(): Promise<void> {
           </dd>
         </div>
       </dl>
+
+      <div class="dashboard-actions">
+        <RouterLink
+            v-if="authStore.user?.role === 'owner'"
+            to="/users"
+            class="users-link"
+        >
+            Kelola User
+        </RouterLink>
+
+        <button
+            type="button"
+            class="logout-button"
+            :disabled="authStore.isLoading"
+            @click="handleLogout"
+        >
+            {{ authStore.isLoading ? 'Keluar...' : 'Logout' }}
+        </button>
+      </div>
 
       <button
         type="button"
@@ -128,6 +147,22 @@ h1 {
 
 .logout-button:disabled {
   opacity: 0.6;
+}
+
+.dashboard-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.users-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 18px;
+  border-radius: 10px;
+  background: #047857;
+  color: white;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 @media (max-width: 640px) {

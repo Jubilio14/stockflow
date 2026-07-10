@@ -26,6 +26,15 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
+    {
+      path: '/users',
+      name: 'users',
+      component: () => import('@/views/UsersView.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['owner'],
+      },
+    },
   ],
 })
 
@@ -46,6 +55,16 @@ router.beforeEach(async (to) => {
       query: {
         redirect: to.fullPath,
       },
+    }
+  }
+
+  if (
+    to.meta.roles &&
+    authStore.user &&
+    !to.meta.roles.includes(authStore.user.role)
+  ) {
+    return {
+      name: 'dashboard',
     }
   }
 

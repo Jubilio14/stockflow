@@ -84,4 +84,4 @@ class StoreUserRequest extends FormRequest
             'is_active.boolean' => 'Status aktif harus berupa true atau false.',
         ];
     }
-}
+}   
