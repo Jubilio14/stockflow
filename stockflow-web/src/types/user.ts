@@ -44,3 +44,21 @@ export interface PaginatedUsersResponse {
     total: number
   }
 }
+
+export type StaffRole = 'admin' | 'cashier'
+
+export interface CreateUserPayload {
+  name: string
+  email: string
+  password: string
+  password_confirmation: string
+  role: StaffRole
+  is_active: boolean
+}
+
+export interface CreateUserResponse {
+  message: string
+  user: UserItem
+}
+
+export type UserValidationErrors = Record<string, string[]>

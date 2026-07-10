@@ -61,15 +61,6 @@ async function handleLogout(): Promise<void> {
             {{ authStore.isLoading ? 'Keluar...' : 'Logout' }}
         </button>
       </div>
-
-      <button
-        type="button"
-        class="logout-button"
-        :disabled="authStore.isLoading"
-        @click="handleLogout"
-      >
-        {{ authStore.isLoading ? 'Keluar...' : 'Logout' }}
-      </button>
     </section>
   </main>
 </template>

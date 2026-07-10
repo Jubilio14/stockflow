@@ -1,6 +1,8 @@
 import api from '@/services/api'
 
 import type {
+  CreateUserPayload,
+  CreateUserResponse,
   PaginatedUsersResponse,
   UserFilters,
 } from '@/types/user'
@@ -23,6 +25,17 @@ export async function getUsers(
     {
       params: buildUserParams(filters),
     },
+  )
+
+  return response.data
+}
+
+export async function createUser(
+  payload: CreateUserPayload,
+): Promise<CreateUserResponse> {
+  const response = await api.post<CreateUserResponse>(
+    '/api/users',
+    payload,
   )
 
   return response.data

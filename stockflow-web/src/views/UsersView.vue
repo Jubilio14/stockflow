@@ -1,17 +1,37 @@
 <script setup lang="ts">
 import axios from 'axios'
-import { onMounted, reactive, ref } from 'vue'
+import { toast } from 'vue-sonner'
+import {
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue'
 
-import { getUsers } from '@/services/userService'
+import {
+  createUser,
+  getUsers,
+} from '@/services/userService'
 
 import type {
+  CreateUserPayload,
   PaginatedUsersResponse,
+  StaffRole,
   UserFilters,
   UserItem,
+  UserValidationErrors,
 } from '@/types/user'
 
+interface ApiErrorResponse {
+  message?: string
+  errors?: UserValidationErrors
+}
+
 const users = ref<UserItem[]>([])
-const pagination = ref<PaginatedUsersResponse['meta'] | null>(null)
+const pagination = ref<PaginatedUsersResponse['meta'] | null>(
+  null,
+)
 
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -22,6 +42,20 @@ const filters = reactive<UserFilters>({
   status: '',
   page: 1,
   per_page: 10,
+})
+
+const isCreateModalOpen = ref(false)
+const isSubmitting = ref(false)
+const createErrorMessage = ref('')
+const formErrors = ref<UserValidationErrors>({})
+
+const createForm = reactive<CreateUserPayload>({
+  name: '',
+  email: '',
+  password: '',
+  password_confirmation: '',
+  role: 'cashier',
+  is_active: true,
 })
 
 async function loadUsers(): Promise<void> {
@@ -98,8 +132,185 @@ function roleLabel(role: UserItem['role']): string {
   return labels[role]
 }
 
+function resetCreateForm(): void {
+  createForm.name = ''
+  createForm.email = ''
+  createForm.password = ''
+  createForm.password_confirmation = ''
+  createForm.role = 'cashier'
+  createForm.is_active = true
+
+  formErrors.value = {}
+  createErrorMessage.value = ''
+}
+
+function openCreateModal(): void {
+  resetCreateForm()
+  isCreateModalOpen.value = true
+}
+
+function closeCreateModal(): void {
+  if (isSubmitting.value) {
+    return
+  }
+
+  isCreateModalOpen.value = false
+  resetCreateForm()
+}
+
+function validateCreateForm(): boolean {
+  formErrors.value = {}
+  createErrorMessage.value = ''
+
+  const errors: UserValidationErrors = {}
+
+  if (!createForm.name.trim()) {
+    errors.name = ['Nama wajib diisi.']
+  }
+
+  if (!createForm.email.trim()) {
+    errors.email = ['Email wajib diisi.']
+  }
+
+  if (!createForm.password) {
+    errors.password = ['Password wajib diisi.']
+  } else if (createForm.password.length < 8) {
+    errors.password = [
+      'Password minimal terdiri dari 8 karakter.',
+    ]
+  }
+
+  if (!createForm.password_confirmation) {
+    errors.password_confirmation = [
+      'Konfirmasi password wajib diisi.',
+    ]
+  } else if (
+    createForm.password !==
+    createForm.password_confirmation
+  ) {
+    errors.password_confirmation = [
+      'Konfirmasi password tidak sesuai.',
+    ]
+  }
+
+  formErrors.value = errors
+
+  return Object.keys(errors).length === 0
+}
+
+async function submitCreateUser(): Promise<void> {
+  if (!validateCreateForm()) {
+    return
+  }
+
+  isSubmitting.value = true
+  createErrorMessage.value = ''
+
+  try {
+  const createdUserName = createForm.name.trim()
+  const createdUserRole = createForm.role
+
+  const response = await createUser({
+    name: createdUserName,
+    email: createForm.email.trim(),
+    password: createForm.password,
+    password_confirmation:
+      createForm.password_confirmation,
+    role: createdUserRole,
+    is_active: createForm.is_active,
+  })
+
+  isCreateModalOpen.value = false
+  resetCreateForm()
+
+  toast.success(
+    response.message || 'User berhasil ditambahkan.',
+    {
+      description: `${createdUserName} berhasil dibuat sebagai ${roleLabel(createdUserRole)}.`,
+    },
+  )
+
+  filters.page = 1
+  await loadUsers()
+} catch (error: unknown) {
+    if (!axios.isAxiosError<ApiErrorResponse>(error)) {
+      createErrorMessage.value =
+        'Terjadi kesalahan yang tidak dikenali.'
+      return
+    }
+
+    if (!error.response) {
+      createErrorMessage.value =
+        'Tidak dapat terhubung ke server Laravel.'
+      return
+    }
+
+    const status = error.response.status
+    const data = error.response.data
+
+    if (status === 422) {
+      formErrors.value = data.errors ?? {}
+
+      if (Object.keys(formErrors.value).length === 0) {
+        createErrorMessage.value =
+          data.message ?? 'Data user tidak valid.'
+      }
+
+      return
+    }
+
+    if (status === 401) {
+      createErrorMessage.value =
+        'Session login sudah tidak valid.'
+      return
+    }
+
+    if (status === 403) {
+      createErrorMessage.value =
+        'Anda tidak memiliki izin untuk membuat user.'
+      return
+    }
+
+    if (status === 419) {
+      createErrorMessage.value =
+        'Sesi keamanan sudah tidak valid. Muat ulang halaman.'
+      return
+    }
+
+    if (status >= 500) {
+      createErrorMessage.value =
+        'Server mengalami masalah saat membuat user.'
+      return
+    }
+
+    createErrorMessage.value =
+      data.message ?? 'User gagal ditambahkan.'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+function handleEscape(event: KeyboardEvent): void {
+  if (
+    event.key === 'Escape' &&
+    isCreateModalOpen.value
+  ) {
+    closeCreateModal()
+  }
+}
+
+watch(isCreateModalOpen, (isOpen) => {
+  document.body.style.overflow = isOpen ? 'hidden' : ''
+})
+
 onMounted(() => {
   loadUsers()
+  window.addEventListener('keydown', handleEscape)
+})
+
+onBeforeUnmount(() => {
+  document.body.style.overflow = ''
+  window.removeEventListener('keydown', handleEscape)
 })
 </script>
 
@@ -116,8 +327,12 @@ onMounted(() => {
           </p>
         </div>
 
-        <button type="button" class="primary-button">
-          Tambah User
+        <button
+            type="button"
+            class="primary-button"
+            @click="openCreateModal"
+        >
+            Tambah User
         </button>
       </header>
 
@@ -171,9 +386,9 @@ onMounted(() => {
         </form>
       </section>
 
-      <div v-if="errorMessage" class="alert-error">
-        {{ errorMessage }}
-      </div>
+        <div v-if="errorMessage" class="alert-error">
+            {{ errorMessage }}
+        </div>
 
       <section class="table-card">
         <div v-if="isLoading" class="state-message">
@@ -290,6 +505,191 @@ onMounted(() => {
         </footer>
       </section>
     </section>
+    <Teleport to="body">
+        <div
+            v-if="isCreateModalOpen"
+            class="modal-backdrop"
+            @click.self="closeCreateModal"
+        >
+            <section
+            class="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-user-title"
+            >
+            <header class="modal-header">
+                <div>
+                <p class="eyebrow">Akun Pegawai</p>
+                <h2 id="create-user-title">Tambah User</h2>
+                <p>
+                    Buat akun Admin atau Cashier untuk mengakses
+                    StockFlow.
+                </p>
+                </div>
+
+                <button
+                type="button"
+                class="modal-close"
+                :disabled="isSubmitting"
+                aria-label="Tutup modal"
+                @click="closeCreateModal"
+                >
+                ×
+                </button>
+            </header>
+
+            <form
+                class="create-user-form"
+                novalidate
+                @submit.prevent="submitCreateUser"
+            >
+                <div v-if="createErrorMessage" class="alert-error">
+                {{ createErrorMessage }}
+                </div>
+
+                <div class="modal-form-grid">
+                <div class="form-group full-column">
+                    <label for="create-name">Nama</label>
+
+                    <input
+                    id="create-name"
+                    v-model="createForm.name"
+                    type="text"
+                    autocomplete="name"
+                    placeholder="Contoh: Budi Santoso"
+                    />
+
+                    <span
+                    v-if="formErrors.name?.[0]"
+                    class="field-error"
+                    >
+                    {{ formErrors.name[0] }}
+                    </span>
+                </div>
+
+                <div class="form-group full-column">
+                    <label for="create-email">Email</label>
+
+                    <input
+                    id="create-email"
+                    v-model="createForm.email"
+                    type="email"
+                    autocomplete="email"
+                    placeholder="Contoh: kasir@stockflow.test"
+                    />
+
+                    <span
+                    v-if="formErrors.email?.[0]"
+                    class="field-error"
+                    >
+                    {{ formErrors.email[0] }}
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label for="create-role">Role</label>
+
+                    <select
+                    id="create-role"
+                    v-model="createForm.role"
+                    >
+                    <option value="admin">Admin</option>
+                    <option value="cashier">Cashier</option>
+                    </select>
+
+                    <span
+                    v-if="formErrors.role?.[0]"
+                    class="field-error"
+                    >
+                    {{ formErrors.role[0] }}
+                    </span>
+                </div>
+
+                <label class="status-checkbox">
+                    <input
+                    v-model="createForm.is_active"
+                    type="checkbox"
+                    />
+
+                    <span>
+                    <strong>Akun aktif</strong>
+                    <small>
+                        User dapat langsung login setelah dibuat.
+                    </small>
+                    </span>
+                </label>
+
+                <div class="form-group">
+                    <label for="create-password">Password</label>
+
+                    <input
+                    id="create-password"
+                    v-model="createForm.password"
+                    type="password"
+                    autocomplete="new-password"
+                    placeholder="Minimal 8 karakter"
+                    />
+
+                    <span
+                    v-if="formErrors.password?.[0]"
+                    class="field-error"
+                    >
+                    {{ formErrors.password[0] }}
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label for="create-password-confirmation">
+                    Konfirmasi Password
+                    </label>
+
+                    <input
+                    id="create-password-confirmation"
+                    v-model="createForm.password_confirmation"
+                    type="password"
+                    autocomplete="new-password"
+                    placeholder="Ulangi password"
+                    />
+
+                    <span
+                    v-if="
+                        formErrors.password_confirmation?.[0]
+                    "
+                    class="field-error"
+                    >
+                    {{
+                        formErrors.password_confirmation[0]
+                    }}
+                    </span>
+                </div>
+                </div>
+
+                <footer class="modal-actions">
+                <button
+                    type="button"
+                    class="cancel-button"
+                    :disabled="isSubmitting"
+                    @click="closeCreateModal"
+                >
+                    Batal
+                </button>
+
+                <button
+                    type="submit"
+                    class="submit-button"
+                    :disabled="isSubmitting"
+                >
+                    {{
+                    isSubmitting
+                        ? 'Menyimpan...'
+                        : 'Simpan User'
+                    }}
+                </button>
+                </footer>
+            </form>
+            </section>
+        </div>
+        </Teleport>
   </main>
 </template>
 
@@ -561,6 +961,182 @@ td {
 .pagination-buttons span {
   color: #64748b;
   font-size: 13px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow-y: auto;
+  background: rgb(15 23 42 / 55%);
+  backdrop-filter: blur(3px);
+}
+
+.modal-card {
+  width: min(100%, 640px);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  border-radius: 20px;
+  background: white;
+  box-shadow: 0 28px 80px rgb(15 23 42 / 25%);
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.modal-header p:not(.eyebrow) {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.create-user-form {
+  padding: 24px;
+}
+
+.modal-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.full-column {
+  grid-column: 1 / -1;
+}
+
+.field-error {
+  color: #dc2626;
+  font-size: 12px;
+}
+
+.status-checkbox {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  align-self: end;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.status-checkbox input {
+  width: 17px;
+  height: 17px;
+}
+
+.status-checkbox span,
+.status-checkbox strong,
+.status-checkbox small {
+  display: block;
+}
+
+.status-checkbox strong {
+  color: #334155;
+  font-size: 13px;
+}
+
+.status-checkbox small {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.cancel-button,
+.submit-button {
+  min-width: 110px;
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.cancel-button {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.submit-button {
+  background: #047857;
+  color: white;
+}
+
+.cancel-button:disabled,
+.submit-button:disabled,
+.modal-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 640px) {
+  .modal-backdrop {
+    padding: 10px;
+  }
+
+  .modal-card {
+    max-height: calc(100vh - 20px);
+    border-radius: 16px;
+  }
+
+  .modal-header,
+  .create-user-form {
+    padding: 20px;
+  }
+
+  .modal-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-column {
+    grid-column: auto;
+  }
+
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cancel-button,
+  .submit-button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 900px) {
