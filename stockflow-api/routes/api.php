@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -26,14 +27,16 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware([
     'auth:sanctum',
     'role:owner',
-])->get('/owner/check', function (Request $request) {
-    return response()->json([
-        'message' => 'Anda memiliki akses sebagai Owner.',
-        'user' => $request->user()->only([
-            'id',
-            'name',
-            'email',
-            'role',
-        ]),
-    ]);
-});
+])
+    ->prefix('users')
+    ->group(function () {
+        Route::get('/', [
+            UserController::class,
+            'index',
+        ]);
+
+        Route::post('/', [
+            UserController::class,
+            'store',
+        ]);
+    });

@@ -39,7 +39,7 @@ class AuthenticatedSessionController extends Controller
 
         if (! $authenticated) {
             return response()->json([
-                    'message' => 'Email atau password salah.',
+                'message' => 'Email atau password salah.',
             ], 422);
         }
 
