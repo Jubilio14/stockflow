@@ -11,6 +11,11 @@ interface ValidationErrors {
   remember?: string[]
 }
 
+interface ApiErrorResponse {
+  message?: string
+  errors?: ValidationErrors
+}
+
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
@@ -28,8 +33,27 @@ async function submitLogin(): Promise<void> {
   errors.value = {}
   generalError.value = ''
 
+  const email = form.email.trim()
+  const password = form.password
+
+  if (!email) {
+    errors.value.email = ['Email wajib diisi.']
+  }
+
+  if (!password) {
+    errors.value.password = ['Password wajib diisi.']
+  }
+
+  if (Object.keys(errors.value).length > 0) {
+    return
+  }
+
   try {
-    await authStore.login(form)
+    await authStore.login({
+      email,
+      password,
+      remember: form.remember,
+    })
 
     const redirectPath =
       typeof route.query.redirect === 'string'
@@ -38,21 +62,50 @@ async function submitLogin(): Promise<void> {
 
     await router.replace(redirectPath)
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      if (error.response?.status === 422) {
-        errors.value = error.response.data.errors ?? {}
-        return
+    if (!axios.isAxiosError<ApiErrorResponse>(error)) {
+      generalError.value = 'Terjadi kesalahan yang tidak dikenali.'
+      return
+    }
+
+    if (!error.response) {
+      generalError.value =
+        'Tidak dapat terhubung ke server. Pastikan Laravel sedang berjalan.'
+      return
+    }
+
+    const status = error.response.status
+    const data = error.response.data
+
+    if (status === 422) {
+      errors.value = data.errors ?? {}
+
+      if (Object.keys(errors.value).length === 0) {
+        generalError.value =
+          data.message ?? 'Email atau password salah.'
       }
 
-      if (error.response?.status === 419) {
-        generalError.value =
-          'Sesi keamanan sudah tidak valid. Silakan muat ulang halaman.'
-        return
-      }
+      return
+    }
+
+    if (status === 419) {
+      generalError.value =
+        'Sesi keamanan sudah tidak valid. Silakan muat ulang halaman.'
+      return
+    }
+
+    if (status === 401) {
+      generalError.value = 'Anda tidak memiliki akses.'
+      return
+    }
+
+    if (status >= 500) {
+      generalError.value =
+        'Server sedang mengalami masalah. Silakan coba kembali.'
+      return
     }
 
     generalError.value =
-      'Login gagal. Pastikan Laravel berjalan dan coba kembali.'
+      data.message ?? `Login gagal dengan status HTTP ${status}.`
   }
 }
 </script>
@@ -82,7 +135,7 @@ async function submitLogin(): Promise<void> {
         {{ generalError }}
       </div>
 
-      <form class="login-form" @submit.prevent="submitLogin">
+      <form class="login-form" @submit.prevent="submitLogin" novalidate>
         <div class="form-group">
           <label for="email">Email</label>
 
@@ -92,6 +145,7 @@ async function submitLogin(): Promise<void> {
             type="email"
             autocomplete="email"
             placeholder="nama@stockflow.test"
+            required
           />
 
           <small v-if="errors.email" class="field-error">
@@ -110,6 +164,7 @@ async function submitLogin(): Promise<void> {
             type="password"
             autocomplete="current-password"
             placeholder="Masukkan password"
+            required
           />
 
           <small v-if="errors.password" class="field-error">

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -39,11 +38,9 @@ class AuthenticatedSessionController extends Controller
         ], $remember);
 
         if (! $authenticated) {
-            throw ValidationException::withMessages([
-                'email' => [
-                    'Email, password, atau status akun tidak valid.',
-                ],
-            ]);
+            return response()->json([
+                    'message' => 'Email atau password salah.',
+            ], 422);
         }
 
         $request->session()->regenerate();
