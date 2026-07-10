@@ -70,6 +70,18 @@ const router = createRouter({
             roles: ['owner', 'admin'],
           },
         },
+
+        {
+          path: 'products',
+          name: 'products',
+          component: () =>
+            import('@/views/ProductsView.vue'),
+
+          meta: {
+            title: 'Manajemen Produk',
+            roles: ['owner', 'admin'],
+          },
+        },
       ],
     },
 
