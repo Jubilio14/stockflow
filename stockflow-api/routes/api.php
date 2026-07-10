@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -112,3 +113,29 @@ Route::middleware([
             'toggleStatus',
         ]);
     });
+
+Route::middleware([
+    'auth:sanctum',
+    'active.user',
+    'role:owner,admin',
+])->group(function () {
+    Route::get(
+        '/suppliers',
+        [SupplierController::class, 'index']
+    );
+
+    Route::post(
+        '/suppliers',
+        [SupplierController::class, 'store']
+    );
+
+    Route::put(
+        '/suppliers/{supplier}',
+        [SupplierController::class, 'update']
+    );
+
+    Route::patch(
+        '/suppliers/{supplier}/toggle-status',
+        [SupplierController::class, 'toggleStatus']
+    );
+});
