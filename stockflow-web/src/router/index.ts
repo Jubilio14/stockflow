@@ -129,6 +129,20 @@ const router = createRouter({
             roles: ['owner', 'admin'],
           },
         },
+        {
+          path: 'stock-movements',
+          name: 'stock-movements',
+
+          component: () =>
+            import(
+              '@/views/StockMovementsView.vue'
+            ),
+
+          meta: {
+            title: 'Riwayat Stok',
+            roles: ['owner', 'admin'],
+          },
+        },
       ],
     },
 

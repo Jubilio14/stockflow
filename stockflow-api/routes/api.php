@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PurchaseController;
+use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
@@ -153,5 +154,10 @@ Route::middleware([
     Route::get(
         '/purchases/{purchase}',
         [PurchaseController::class, 'show']
+    );
+
+    Route::get(
+        '/stock-movements',
+        [StockMovementController::class, 'index']
     );
 });
