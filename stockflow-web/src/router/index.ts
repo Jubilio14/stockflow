@@ -58,6 +58,18 @@ const router = createRouter({
             roles: ['owner'],
           },
         },
+
+        {
+          path: 'categories',
+          name: 'categories',
+          component: () =>
+            import('@/views/CategoriesView.vue'),
+
+          meta: {
+            title: 'Kategori Produk',
+            roles: ['owner', 'admin'],
+          },
+        },
       ],
     },
 
