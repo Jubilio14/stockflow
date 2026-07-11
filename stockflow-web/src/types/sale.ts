@@ -144,3 +144,48 @@ export interface SaleMutationResponse {
 
 export type SaleValidationErrors =
   Record<string, string[]>
+
+export interface SaleFilters {
+  search: string
+
+  payment_method:
+    | ''
+    | 'cash'
+    | 'qris'
+    | 'transfer'
+    | 'debit'
+
+  cash_session_id: number | ''
+
+  date_from: string
+  date_to: string
+
+  page: number
+  per_page: number
+}
+
+export interface SalePaginationMeta {
+  current_page: number
+  from: number | null
+  last_page: number
+  per_page: number
+  to: number | null
+  total: number
+}
+
+export interface PaginatedSalesResponse {
+  data: SaleRecord[]
+
+  links: {
+    first: string | null
+    last: string | null
+    prev: string | null
+    next: string | null
+  }
+
+  meta: SalePaginationMeta
+}
+
+export interface SaleResourceResponse {
+  data: SaleRecord
+}

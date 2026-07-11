@@ -30,9 +30,22 @@ const navigationItems: NavigationItem[] = [
     routeName: 'dashboard',
   },
   {
-    label: 'User Management',
-    routeName: 'users',
-    roles: ['owner'],
+    label: 'Buka POS',
+    routeName: 'cashier.session',
+    roles: ['owner', 'admin', 'cashier'],
+  },
+  {
+    label: 'Sesi Kasir',
+    routeName: 'cash-sessions.index',
+    roles: [
+        'owner',
+        'admin',
+    ],
+  },
+  {
+    label: 'Promo & Diskon',
+    routeName: 'promotions',
+    roles: ['owner', 'admin'],
   },
   {
     label: 'Kategori Produk',
@@ -54,6 +67,12 @@ const navigationItems: NavigationItem[] = [
     routeName: 'purchases',
     roles: ['owner', 'admin'],
   },
+  
+  {
+    label: 'User Management',
+    routeName: 'users',
+    roles: ['owner'],
+  },
   {
     label: 'Riwayat Stok',
     routeName: 'stock-movements',
@@ -65,18 +84,8 @@ const navigationItems: NavigationItem[] = [
     roles: ['owner', 'admin'],
   },
   {
-    label: 'Promo & Diskon',
-    routeName: 'promotions',
-    roles: ['owner', 'admin'],
-  },
-  {
-    label: 'Buka POS',
-    routeName: 'cashier.session',
-    roles: ['owner', 'admin', 'cashier'],
-  },
-  {
-    label: 'Sesi Kasir',
-    routeName: 'cash-sessions.index',
+    label: 'Penjualan',
+    routeName: 'sales.index',
     roles: [
         'owner',
         'admin',

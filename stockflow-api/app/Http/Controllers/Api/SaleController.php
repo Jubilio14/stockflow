@@ -186,6 +186,12 @@ class SaleController extends Controller
                 'min:5',
                 'max:100',
             ],
+
+            'cash_session_id' => [
+                'nullable',
+                'integer',
+                'exists:cash_sessions,id',
+            ],
         ]);
 
         $user = $request->user();
@@ -217,6 +223,18 @@ class SaleController extends Controller
                 fn ($query) => $query->where(
                     'cashier_id',
                     $user->id
+                )
+            )
+
+            ->when(
+                isset(
+                    $validated['cash_session_id']
+                ),
+                fn ($query) => $query->where(
+                    'cash_session_id',
+                    $validated[
+                        'cash_session_id'
+                    ]
                 )
             )
 

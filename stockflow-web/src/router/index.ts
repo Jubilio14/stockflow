@@ -233,6 +233,40 @@ const router = createRouter({
             ],
           },
         },
+        {
+          path: 'sales',
+          name: 'sales.index',
+
+          component: () =>
+            import(
+              '@/views/sales/SaleIndexView.vue'
+            ),
+
+          meta: {
+            title: 'Riwayat Penjualan',
+            roles: [
+              'owner',
+              'admin',
+            ],
+          },
+        },
+        {
+          path: 'sales/:id',
+          name: 'sales.show',
+
+          component: () =>
+            import(
+              '@/views/sales/SaleShowView.vue'
+            ),
+
+          meta: {
+            title: 'Detail Penjualan',
+            roles: [
+              'owner',
+              'admin',
+            ],
+          },
+        },
       ],
     },
 

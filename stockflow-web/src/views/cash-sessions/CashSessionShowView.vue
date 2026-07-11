@@ -142,6 +142,21 @@ function differenceClass(): string {
   )
 }
 
+function openSessionSales(): void {
+  if (!session.value) {
+    return
+  }
+
+  router.push({
+    name: 'sales.index',
+
+    query: {
+      cash_session_id:
+        String(session.value.id),
+    },
+  })
+}
+
 function formatCurrency(
   value: number | null,
 ): string {
@@ -251,6 +266,7 @@ onMounted(() => {
           </p>
         </div>
 
+        
         <div class="header-status">
           <span
             :class="[
@@ -275,6 +291,19 @@ onMounted(() => {
           </span>
         </div>
       </header>
+
+      <button
+        v-if="
+          (session.sales_count ?? 0) > 0
+        "
+        type="button"
+        class="sales-button"
+        @click="openSessionSales"
+      >
+        Lihat
+        {{ session.sales_count }}
+        Transaksi Sesi
+      </button>
 
       <section class="money-grid">
         <article>
@@ -768,6 +797,17 @@ onMounted(() => {
   border: 1px solid #e2e8f0;
   background: white;
   color: #64748b;
+}
+
+.sales-button {
+  justify-self: start;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: #047857;
+  color: white;
+  font-weight: 700;
 }
 
 @media (max-width: 1150px) {
