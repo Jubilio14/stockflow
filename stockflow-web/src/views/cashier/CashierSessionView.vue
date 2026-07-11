@@ -670,7 +670,7 @@ onMounted(() => {
             {{
               formatCurrency(
                 lastClosedSession
-                  .cash_sales_total,
+                  .cash_sales_total ?? 0,
               )
             }}
           </strong>

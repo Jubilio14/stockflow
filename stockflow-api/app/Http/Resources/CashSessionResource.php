@@ -19,6 +19,18 @@ class CashSessionResource extends JsonResource
         $currentUser =
             $request->user();
 
+        $canViewRunningTotals =
+            $this->status === 'closed'
+            ||
+            in_array(
+                $currentUser?->role,
+                [
+                    'owner',
+                    'admin',
+                ],
+                true
+            );
+
         $isOwnedByCurrentUser =
             $currentUser?->id ===
             $this->cashier_id;
@@ -54,10 +66,15 @@ class CashSessionResource extends JsonResource
 
             'opening_cash' => (float) $this->opening_cash,
 
-            'cash_sales_total' => (float) $this
-                ->cash_sales_total,
+            'cash_sales_total' =>
+                $canViewRunningTotals
+                    ? (float) $this->cash_sales_total
+                    : null,
 
-            'expected_cash_now' => $expectedCashNow,
+            'expected_cash_now' =>
+                $canViewRunningTotals
+                    ? $expectedCashNow
+                    : null,
 
             'closed_at' => $this->closed_at
                 ?->toISOString(),

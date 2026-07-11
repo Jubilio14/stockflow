@@ -21,8 +21,8 @@ export interface CashSessionItem {
 
   opened_at: string
   opening_cash: number
-  cash_sales_total: number
-  expected_cash_now: number
+  cash_sales_total: number | null
+expected_cash_now: number | null
 
   closed_at: string | null
 

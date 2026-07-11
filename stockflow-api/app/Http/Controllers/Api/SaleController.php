@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSaleRequest;
-use App\Http\Resources\ProductResource;
+use App\Http\Resources\PosProductResource;
 use App\Http\Resources\SaleResource;
 use App\Models\Product;
 use App\Models\Sale;
@@ -126,7 +126,7 @@ class SaleController extends Controller
                 $request->query()
             );
 
-        return ProductResource::collection(
+        return PosProductResource::collection(
             $products
         );
     }
