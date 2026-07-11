@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PromotionController;
 use App\Http\Controllers\Api\PurchaseController;
 use App\Http\Controllers\Api\SaleController;
+use App\Http\Controllers\Api\SalesReportController;
 use App\Http\Controllers\Api\StockAdjustmentController;
 use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\SupplierController;
@@ -125,6 +126,10 @@ Route::middleware([
     'active.user',
     'role:owner,admin',
 ])->group(function () {
+    Route::get(
+        '/reports/sales',
+        SalesReportController::class
+    );
     Route::get(
         '/suppliers',
         [SupplierController::class, 'index']
