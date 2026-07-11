@@ -74,4 +74,11 @@ class Product extends Model
             StockAdjustmentItem::class
         );
     }
+
+    public function saleItems(): HasMany
+    {
+        return $this->hasMany(
+            SaleItem::class
+        );
+    }
 }

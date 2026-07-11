@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CashSession extends Model
 {
@@ -64,6 +65,13 @@ class CashSession extends Model
         return $query->where(
             'status',
             'closed'
+        );
+    }
+
+    public function sales(): HasMany
+    {
+        return $this->hasMany(
+            Sale::class
         );
     }
 }

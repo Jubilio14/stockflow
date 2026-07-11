@@ -40,4 +40,12 @@ class User extends Authenticatable
             'cashier_id'
         );
     }
+
+    public function sales(): HasMany
+    {
+        return $this->hasMany(
+            Sale::class,
+            'cashier_id'
+        );
+    }
 }

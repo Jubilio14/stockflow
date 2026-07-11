@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PromotionController;
 use App\Http\Controllers\Api\PurchaseController;
+use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\StockAdjustmentController;
 use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\SupplierController;
@@ -236,49 +237,89 @@ Route::middleware([
                 'toggleStatus',
             ]
         );
+
     });
 
     Route::middleware(
-            'role:owner,admin,cashier'
-        )->group(function () {
-            Route::get(
-                '/cash-sessions/current',
-                [
-                    CashSessionController::class,
-                    'current',
-                ]
-            );
+        'role:owner,admin,cashier'
+    )->group(function () {
+        Route::get(
+            '/cash-sessions/current',
+            [
+                CashSessionController::class,
+                'current',
+            ]
+        );
 
-            Route::post(
-                '/cash-sessions/open',
-                [
-                    CashSessionController::class,
-                    'open',
-                ]
-            );
+        Route::post(
+            '/cash-sessions/open',
+            [
+                CashSessionController::class,
+                'open',
+            ]
+        );
 
-            Route::get(
-                '/cash-sessions',
-                [
-                    CashSessionController::class,
-                    'index',
-                ]
-            );
+        Route::get(
+            '/cash-sessions',
+            [
+                CashSessionController::class,
+                'index',
+            ]
+        );
 
-            Route::get(
-                '/cash-sessions/{cashSession}',
-                [
-                    CashSessionController::class,
-                    'show',
-                ]
-            );
+        Route::get(
+            '/cash-sessions/{cashSession}',
+            [
+                CashSessionController::class,
+                'show',
+            ]
+        );
 
-            Route::post(
-                '/cash-sessions/{cashSession}/close',
-                [
-                    CashSessionController::class,
-                    'close',
-                ]
-            );
-        });
+        Route::post(
+            '/cash-sessions/{cashSession}/close',
+            [
+                CashSessionController::class,
+                'close',
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | POS dan Sales
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/pos/products',
+            [
+                SaleController::class,
+                'products',
+            ]
+        );
+
+        Route::get(
+            '/sales',
+            [
+                SaleController::class,
+                'index',
+            ]
+        );
+
+        Route::post(
+            '/sales',
+            [
+                SaleController::class,
+                'store',
+            ]
+        );
+
+        Route::get(
+            '/sales/{sale}',
+            [
+                SaleController::class,
+                'show',
+            ]
+        );
+    });
+
 });
