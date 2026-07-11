@@ -185,6 +185,20 @@ const router = createRouter({
             roles: ['owner', 'admin'],
           },
         },
+        {
+          path: 'promotions',
+          name: 'promotions',
+
+          component: () =>
+            import(
+              '@/views/PromotionsView.vue'
+            ),
+
+          meta: {
+            title: 'Promo & Diskon',
+            roles: ['owner', 'admin'],
+          },
+        },
       ],
     },
 

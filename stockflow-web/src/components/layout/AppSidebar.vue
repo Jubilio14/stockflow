@@ -64,6 +64,11 @@ const navigationItems: NavigationItem[] = [
     routeName: 'stock-adjustments',
     roles: ['owner', 'admin'],
   },
+  {
+    label: 'Promo & Diskon',
+    routeName: 'promotions',
+    roles: ['owner', 'admin'],
+  },
 ]
 
 const visibleNavigationItems = computed(() => {
