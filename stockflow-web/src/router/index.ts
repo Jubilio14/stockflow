@@ -267,6 +267,24 @@ const router = createRouter({
             ],
           },
         },
+        {
+          path: 'reports/sales',
+          name: 'reports.sales',
+
+          component: () =>
+            import(
+              '@/views/reports/SalesReportView.vue'
+            ),
+
+          meta: {
+            title: 'Laporan Pendapatan',
+
+            roles: [
+              'owner',
+              'admin',
+            ],
+          },
+        },
       ],
     },
 

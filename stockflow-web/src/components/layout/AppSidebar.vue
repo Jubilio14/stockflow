@@ -90,7 +90,16 @@ const navigationItems: NavigationItem[] = [
         'owner',
         'admin',
     ],
-    },
+  },
+  {
+    label: 'Laporan',
+    routeName: 'reports.sales',
+
+    roles: [
+        'owner',
+        'admin',
+    ],
+  },
 ]
 
 const visibleNavigationItems = computed(() => {
