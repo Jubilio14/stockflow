@@ -1,17 +1,44 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
+
+import {
+  useRoute,
+  useRouter,
+} from 'vue-router'
+
 import { toast } from 'vue-sonner'
 
 import { useAuthStore } from '@/stores/auth'
 
-import type { UserRole } from '@/types/auth'
+import type {
+  UserRole,
+} from '@/types/auth'
 
-interface NavigationItem {
+interface NavigationBase {
   label: string
-  routeName: string
   roles?: UserRole[]
 }
+
+interface NavigationLink
+  extends NavigationBase {
+  type: 'link'
+  routeName: string
+}
+
+interface NavigationGroup
+  extends NavigationBase {
+  type: 'group'
+  key: string
+  children: NavigationLink[]
+}
+
+type NavigationItem =
+  | NavigationLink
+  | NavigationGroup
 
 defineProps<{
   isOpen: boolean
@@ -21,122 +48,462 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const navigationItems: NavigationItem[] = [
-  {
-    label: 'Dashboard',
-    routeName: 'dashboard',
-  },
-  {
-    label: 'Buka POS',
-    routeName: 'cashier.session',
-    roles: ['owner', 'admin', 'cashier'],
-  },
-  {
-    label: 'Sesi Kasir',
-    routeName: 'cash-sessions.index',
-    roles: [
+/*
+|--------------------------------------------------------------------------
+| Grup yang sedang terbuka
+|--------------------------------------------------------------------------
+|
+| Hanya satu grup dibuka dalam satu waktu supaya sidebar tetap ringkas.
+|
+*/
+
+const openedGroupKey =
+  ref<string | null>(null)
+
+/*
+|--------------------------------------------------------------------------
+| Daftar navigasi
+|--------------------------------------------------------------------------
+*/
+
+const navigationItems:
+  NavigationItem[] = [
+    /*
+    |--------------------------------------------------------------------------
+    | Menu utama di luar grup
+    |--------------------------------------------------------------------------
+    */
+
+    {
+      type: 'link',
+      label: 'Dashboard',
+      routeName: 'dashboard',
+    },
+
+    {
+      type: 'link',
+      label: 'Buka POS',
+      routeName: 'cashier.session',
+      roles: [
         'owner',
         'admin',
-    ],
-  },
-  {
-    label: 'Promo & Diskon',
-    routeName: 'promotions',
-    roles: ['owner', 'admin'],
-  },
-  {
-    label: 'Kategori Produk',
-    routeName: 'categories',
-    roles: ['owner', 'admin'],
-  },
-  {
-    label: 'Produk',
-    routeName: 'products',
-    roles: ['owner', 'admin'],
-  },
-  {
-    label: 'Supplier',
-    routeName: 'suppliers',
-    roles: ['owner', 'admin'],
-  },
-  {
-    label: 'Pembelian',
-    routeName: 'purchases',
-    roles: ['owner', 'admin'],
-  },
-  
-  {
-    label: 'User Management',
-    routeName: 'users',
-    roles: ['owner'],
-  },
-  {
-    label: 'Riwayat Stok',
-    routeName: 'stock-movements',
-    roles: ['owner', 'admin'],
-  },
-  {
-    label: 'Penyesuaian Stok',
-    routeName: 'stock-adjustments',
-    roles: ['owner', 'admin'],
-  },
-  {
-    label: 'Penjualan',
-    routeName: 'sales.index',
-    roles: [
+        'cashier',
+      ],
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Transaksi
+    |--------------------------------------------------------------------------
+    */
+
+    {
+      type: 'group',
+      key: 'transactions',
+      label: 'Transaksi',
+      roles: [
         'owner',
         'admin',
-    ],
-  },
-  {
-    label: 'Laporan',
-    routeName: 'reports.sales',
+        'cashier',
+      ],
 
-    roles: [
+      children: [
+
+        {
+          type: 'link',
+          label: 'Penjualan',
+          routeName: 'sales.index',
+          roles: [
+            'owner',
+            'admin',
+          ],
+        },
+
+        {
+          type: 'link',
+          label: 'Pembelian',
+          routeName: 'purchases',
+          roles: [
+            'owner',
+            'admin',
+          ],
+        },
+      ],
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Master Data
+    |--------------------------------------------------------------------------
+    */
+
+    {
+      type: 'group',
+      key: 'master-data',
+      label: 'Master Data',
+      roles: [
         'owner',
         'admin',
-    ],
-  },
-]
+      ],
 
-const visibleNavigationItems = computed(() => {
-  const userRole = authStore.user?.role
+      children: [
+        {
+          type: 'link',
+          label: 'Produk',
+          routeName: 'products',
+          roles: [
+            'owner',
+            'admin',
+          ],
+        },
 
-  return navigationItems.filter((item) => {
-    if (!item.roles) {
-      return true
-    }
+        {
+          type: 'link',
+          label: 'Kategori Produk',
+          routeName: 'categories',
+          roles: [
+            'owner',
+            'admin',
+          ],
+        },
 
-    if (!userRole) {
-      return false
-    }
+        {
+          type: 'link',
+          label: 'Supplier',
+          routeName: 'suppliers',
+          roles: [
+            'owner',
+            'admin',
+          ],
+        },
 
-    return item.roles.includes(userRole)
-  })
-})
+        {
+          type: 'link',
+          label: 'Promo & Diskon',
+          routeName: 'promotions',
+          roles: [
+            'owner',
+            'admin',
+          ],
+        },
+      ],
+    },
 
-function roleLabel(role?: UserRole): string {
-  const labels: Record<UserRole, string> = {
-    owner: 'Owner',
-    admin: 'Admin',
-    cashier: 'Cashier',
+    /*
+    |--------------------------------------------------------------------------
+    | Inventori
+    |--------------------------------------------------------------------------
+    */
+
+    {
+      type: 'group',
+      key: 'inventory',
+      label: 'Inventori',
+      roles: [
+        'owner',
+        'admin',
+      ],
+
+      children: [
+        {
+          type: 'link',
+          label: 'Riwayat Stok',
+          routeName: 'stock-movements',
+          roles: [
+            'owner',
+            'admin',
+          ],
+        },
+
+        {
+          type: 'link',
+          label: 'Penyesuaian Stok',
+          routeName:
+            'stock-adjustments',
+          roles: [
+            'owner',
+            'admin',
+          ],
+        },
+      ],
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Laporan dan audit
+    |--------------------------------------------------------------------------
+    */
+
+    {
+      type: 'group',
+      key: 'reports',
+      label: 'Laporan & Audit',
+      roles: [
+        'owner',
+        'admin',
+      ],
+
+      children: [
+        {
+          type: 'link',
+          label: 'Laporan Pendapatan',
+          routeName: 'reports.sales',
+          roles: [
+            'owner',
+            'admin',
+          ],
+        },
+
+        {
+          type: 'link',
+          label: 'Riwayat Sesi Kasir',
+          routeName:
+            'cash-sessions.index',
+          roles: [
+            'owner',
+            'admin',
+          ],
+        },
+      ],
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sistem
+    |--------------------------------------------------------------------------
+    */
+
+    {
+      type: 'group',
+      key: 'system',
+      label: 'Sistem',
+      roles: [
+        'owner',
+      ],
+
+      children: [
+        {
+          type: 'link',
+          label: 'User Management',
+          routeName: 'users',
+          roles: [
+            'owner',
+          ],
+        },
+      ],
+    },
+  ]
+
+/*
+|--------------------------------------------------------------------------
+| Pemeriksaan hak akses
+|--------------------------------------------------------------------------
+*/
+
+function canAccess(
+  roles?: UserRole[],
+): boolean {
+  if (!roles) {
+    return true
   }
 
-  return role ? labels[role] : '-'
+  const userRole =
+    authStore.user?.role
+
+  if (!userRole) {
+    return false
+  }
+
+  return roles.includes(userRole)
 }
 
-async function handleLogout(): Promise<void> {
+/*
+|--------------------------------------------------------------------------
+| Menu yang boleh dilihat user
+|--------------------------------------------------------------------------
+|
+| Bukan hanya grup yang difilter. Anak menu di dalam grup juga difilter
+| berdasarkan role masing-masing.
+|
+*/
+
+const visibleNavigationItems =
+  computed<NavigationItem[]>(() => {
+    const visibleItems:
+      NavigationItem[] = []
+
+    for (
+      const item of navigationItems
+    ) {
+      if (!canAccess(item.roles)) {
+        continue
+      }
+
+      if (item.type === 'link') {
+        visibleItems.push(item)
+
+        continue
+      }
+
+      const visibleChildren =
+        item.children.filter(
+          (child) =>
+            canAccess(child.roles),
+        )
+
+      if (
+        visibleChildren.length === 0
+      ) {
+        continue
+      }
+
+      visibleItems.push({
+        ...item,
+        children: visibleChildren,
+      })
+    }
+
+    return visibleItems
+  })
+
+/*
+|--------------------------------------------------------------------------
+| Status route dan grup
+|--------------------------------------------------------------------------
+*/
+
+function isRouteActive(
+  routeName: string,
+): boolean {
+  return route.name === routeName
+}
+
+function isGroupActive(
+  group: NavigationGroup,
+): boolean {
+  return group.children.some(
+    (child) =>
+      isRouteActive(
+        child.routeName,
+      ),
+  )
+}
+
+function isGroupOpen(
+  groupKey: string,
+): boolean {
+  return (
+    openedGroupKey.value ===
+    groupKey
+  )
+}
+
+function toggleGroup(
+  groupKey: string,
+): void {
+  openedGroupKey.value =
+    isGroupOpen(groupKey)
+      ? null
+      : groupKey
+}
+
+/*
+|--------------------------------------------------------------------------
+| Otomatis buka grup aktif
+|--------------------------------------------------------------------------
+|
+| Contoh:
+| user berada di halaman Pembelian
+| → grup Transaksi otomatis terbuka.
+|
+*/
+
+function openActiveGroup(): void {
+  const activeGroup =
+    visibleNavigationItems.value
+      .find((item) => {
+        return (
+          item.type === 'group' &&
+          isGroupActive(item)
+        )
+      })
+
+  if (
+    activeGroup?.type === 'group'
+  ) {
+    openedGroupKey.value =
+      activeGroup.key
+  }
+}
+
+watch(
+  [
+    () => route.name,
+    () => authStore.user?.role,
+  ],
+  () => {
+    openActiveGroup()
+  },
+  {
+    immediate: true,
+  },
+)
+
+/*
+|--------------------------------------------------------------------------
+| Mobile sidebar
+|--------------------------------------------------------------------------
+*/
+
+function handleNavigation(): void {
+  emit('close')
+}
+
+/*
+|--------------------------------------------------------------------------
+| Label role
+|--------------------------------------------------------------------------
+*/
+
+function roleLabel(
+  role?: UserRole,
+): string {
+  const labels:
+    Record<UserRole, string> = {
+      owner: 'Owner',
+      admin: 'Admin',
+      cashier: 'Cashier',
+    }
+
+  return role
+    ? labels[role]
+    : '-'
+}
+
+/*
+|--------------------------------------------------------------------------
+| Logout
+|--------------------------------------------------------------------------
+*/
+
+async function handleLogout():
+  Promise<void> {
   try {
     await authStore.logout()
+
+    emit('close')
 
     await router.replace({
       name: 'login',
     })
   } catch {
-    toast.error('Logout gagal. Silakan coba kembali.')
+    toast.error(
+      'Logout gagal. Silakan coba kembali.',
+    )
   }
 }
 </script>
@@ -168,20 +535,95 @@ async function handleLogout(): Promise<void> {
       </button>
     </header>
 
-    <nav class="sidebar-navigation">
-      <p class="navigation-label">Menu Utama</p>
+    <nav class="sidebar-menu">
+  <template
+    v-for="
+      item in visibleNavigationItems
+    "
+    :key="
+      item.type === 'group'
+        ? `group-${item.key}`
+        : `link-${item.routeName}`
+    "
+  >
+    <!-- Menu biasa -->
+    <RouterLink
+      v-if="item.type === 'link'"
+      :to="{
+        name: item.routeName,
+      }"
+      class="sidebar-link"
+      @click="handleNavigation"
+    >
+      <span class="menu-dot" />
 
-      <RouterLink
-        v-for="item in visibleNavigationItems"
-        :key="item.routeName"
-        :to="{ name: item.routeName }"
-        class="navigation-item"
-        @click="emit('close')"
+      <span>
+        {{ item.label }}
+      </span>
+    </RouterLink>
+
+    <!-- Menu grup -->
+    <section
+      v-else
+      class="sidebar-group"
+    >
+      <button
+        type="button"
+        class="group-button"
+        :class="{
+          active:
+            isGroupActive(item),
+        }"
+        @click="
+          toggleGroup(item.key)
+        "
       >
-        <span class="navigation-indicator"></span>
-        <span>{{ item.label }}</span>
-      </RouterLink>
-    </nav>
+        <span class="group-label">
+          <span class="menu-dot" />
+
+          {{ item.label }}
+        </span>
+
+        <span
+          class="group-arrow"
+          :class="{
+            open:
+              isGroupOpen(item.key),
+          }"
+        >
+          ›
+        </span>
+      </button>
+
+      <div
+        v-show="
+          isGroupOpen(item.key)
+        "
+        class="sidebar-submenu"
+      >
+        <RouterLink
+          v-for="
+            child in item.children
+          "
+          :key="child.routeName"
+          :to="{
+            name: child.routeName,
+          }"
+          class="submenu-link"
+          @click="handleNavigation"
+        >
+          <span
+            class="submenu-dot"
+          />
+
+          <span>
+            {{ child.label }}
+          </span>
+        </RouterLink>
+      </div>
+    </section>
+  </template>
+</nav>
 
     <footer class="sidebar-footer">
       <div class="sidebar-user">
@@ -260,6 +702,166 @@ async function handleLogout(): Promise<void> {
   font-weight: 800;
 }
 
+.sidebar-menu {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+
+  flex: 1;
+  min-height: 0;
+
+  overflow-y: auto;
+
+  /*
+   * Tetap bisa scroll, tetapi
+   * scrollbar tidak terlihat.
+   */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-menu::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar-link,
+.group-button {
+  width: 100%;
+  min-height: 52px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 0 16px;
+
+  border: 0;
+  border-radius: 12px;
+
+  color: #cbd5e1;
+  text-decoration: none;
+
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.sidebar-link {
+  background: transparent;
+}
+
+.sidebar-link:hover {
+  background:
+    rgb(255 255 255 / 7%);
+  color: white;
+}
+
+.sidebar-link.router-link-active {
+  background: #07865f;
+  color: white;
+}
+
+.menu-dot {
+  width: 8px;
+  height: 8px;
+
+  flex: 0 0 auto;
+
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.sidebar-group {
+  display: grid;
+  gap: 4px;
+}
+
+.group-button {
+  justify-content: space-between;
+  background: transparent;
+  text-align: left;
+}
+
+.group-button:hover,
+.group-button.active {
+  background:
+    rgb(255 255 255 / 7%);
+  color: white;
+}
+
+.group-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.group-arrow {
+  font-size: 22px;
+  line-height: 1;
+
+  transition:
+    transform 0.2s ease;
+}
+
+.group-arrow.open {
+  transform: rotate(90deg);
+}
+
+.sidebar-submenu {
+  display: grid;
+  gap: 3px;
+
+  margin-left: 19px;
+  padding:
+    3px
+    0
+    5px
+    15px;
+
+  border-left:
+    1px solid
+    rgb(148 163 184 / 25%);
+}
+
+.submenu-link {
+  min-height: 42px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 0 13px;
+
+  border-radius: 10px;
+
+  color: #94a3b8;
+  text-decoration: none;
+
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.submenu-link:hover {
+  background:
+    rgb(255 255 255 / 6%);
+  color: white;
+}
+
+.submenu-link.router-link-active {
+  background: #07865f;
+  color: white;
+}
+
+.submenu-dot {
+  width: 6px;
+  height: 6px;
+
+  flex: 0 0 auto;
+
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .sidebar-brand strong,
 .sidebar-brand span {
   display: block;
@@ -292,6 +894,16 @@ async function handleLogout(): Promise<void> {
   flex: 1;
   padding: 22px 14px;
   overflow-y: auto;
+  /* Firefox */
+  scrollbar-width: none;
+
+  /* Internet Explorer / Edge lama */
+  -ms-overflow-style: none;
+}
+
+/* Chrome, Edge, Safari */
+.sidebar-navigation::-webkit-scrollbar {
+  display: none;
 }
 
 .navigation-label {
