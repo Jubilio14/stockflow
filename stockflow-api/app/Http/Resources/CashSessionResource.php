@@ -66,18 +66,38 @@ class CashSessionResource extends JsonResource
 
             'opening_cash' => (float) $this->opening_cash,
 
-            'cash_sales_total' =>
-                $canViewRunningTotals
+            'cash_sales_total' => $canViewRunningTotals
                     ? (float) $this->cash_sales_total
                     : null,
 
-            'expected_cash_now' =>
-                $canViewRunningTotals
+            'expected_cash_now' => $canViewRunningTotals
                     ? $expectedCashNow
                     : null,
 
             'closed_at' => $this->closed_at
                 ?->toISOString(),
+
+            'closer' => $this->whenLoaded(
+                'closer',
+                function () {
+                    if (! $this->closer) {
+                        return null;
+                    }
+
+                    return [
+                        'id' => $this->closer->id,
+
+                        'name' => $this->closer->name,
+                    ];
+                }
+            ),
+
+            'sales_count' => $this->whenCounted('sales'),
+
+            'duration_minutes' => $this->opened_at
+                ?->diffInMinutes(
+                    $this->closed_at ?? now()
+                ),
 
             'expected_closing_cash' => $this->expected_closing_cash !==
                 null

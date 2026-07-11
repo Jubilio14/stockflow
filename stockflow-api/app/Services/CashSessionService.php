@@ -173,6 +173,8 @@ class CashSessionService
 
                     'open_guard' => null,
 
+                    'closed_by' => $user->id,
+
                     'closing_notes' => $data[
                             'closing_notes'
                         ] ?? null,
@@ -182,6 +184,7 @@ class CashSessionService
                     ->fresh()
                     ->load([
                         'cashier:id,name',
+                        'closer:id,name',
                     ]);
             }
         );

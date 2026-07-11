@@ -16,6 +16,7 @@ class CashSession extends Model
         'opening_cash',
         'cash_sales_total',
         'closed_at',
+        'closed_by',
         'expected_closing_cash',
         'actual_closing_cash',
         'difference',
@@ -72,6 +73,14 @@ class CashSession extends Model
     {
         return $this->hasMany(
             Sale::class
+        );
+    }
+
+    public function closer(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class,
+            'closed_by'
         );
     }
 }

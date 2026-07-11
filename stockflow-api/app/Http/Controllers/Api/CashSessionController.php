@@ -37,6 +37,16 @@ class CashSessionController extends Controller
                 ]),
             ],
 
+            'difference_status' => [
+                'nullable',
+
+                Rule::in([
+                    'balanced',
+                    'over',
+                    'short',
+                ]),
+            ],
+
             'cashier_id' => [
                 'nullable',
                 'integer',
@@ -84,7 +94,9 @@ class CashSessionController extends Controller
             CashSession::query()
                 ->with([
                     'cashier:id,name',
+                    'closer:id,name',
                 ])
+                ->withCount('sales')
 
                 ->when(
                     $user->role === 'cashier',
@@ -139,6 +151,59 @@ class CashSessionController extends Controller
                 )
 
                 ->when(
+                    (
+                        $validated[
+                            'difference_status'
+                        ] ?? null
+                    ) === 'balanced',
+                    fn ($query) => $query
+                        ->where(
+                            'status',
+                            'closed'
+                        )
+                        ->where(
+                            'difference',
+                            0
+                        )
+                )
+
+                ->when(
+                    (
+                        $validated[
+                            'difference_status'
+                        ] ?? null
+                    ) === 'over',
+                    fn ($query) => $query
+                        ->where(
+                            'status',
+                            'closed'
+                        )
+                        ->where(
+                            'difference',
+                            '>',
+                            0
+                        )
+                )
+
+                ->when(
+                    (
+                        $validated[
+                            'difference_status'
+                        ] ?? null
+                    ) === 'short',
+                    fn ($query) => $query
+                        ->where(
+                            'status',
+                            'closed'
+                        )
+                        ->where(
+                            'difference',
+                            '<',
+                            0
+                        )
+                )
+
+                ->when(
                     isset(
                         $validated['cashier_id']
                     )
@@ -186,12 +251,14 @@ class CashSessionController extends Controller
         Request $request
     ): JsonResponse {
         $cashSession =
-            CashSession::query()
-                ->with([
-                    'cashier:id,name',
-                ])
-                ->open()
-                ->first();
+        CashSession::query()
+            ->with([
+                'cashier:id,name',
+                'closer:id,name',
+            ])
+            ->withCount('sales')
+            ->open()
+            ->first();
 
         return response()->json([
             'session' => $cashSession
@@ -245,9 +312,12 @@ class CashSessionController extends Controller
             );
         }
 
-        $cashSession->load([
-            'cashier:id,name',
-        ]);
+        $cashSession
+            ->load([
+                'cashier:id,name',
+                'closer:id,name',
+            ])
+            ->loadCount('sales');
 
         return new CashSessionResource(
             $cashSession

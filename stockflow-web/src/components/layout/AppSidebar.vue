@@ -74,6 +74,14 @@ const navigationItems: NavigationItem[] = [
     routeName: 'cashier.session',
     roles: ['owner', 'admin'],
   },
+  {
+    label: 'Sesi Kasir',
+    routeName: 'cash-sessions.index',
+    roles: [
+        'owner',
+        'admin',
+    ],
+    },
 ]
 
 const visibleNavigationItems = computed(() => {

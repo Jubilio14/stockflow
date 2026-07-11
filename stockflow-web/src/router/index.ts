@@ -199,6 +199,40 @@ const router = createRouter({
             roles: ['owner', 'admin'],
           },
         },
+        {
+          path: 'cash-sessions',
+          name: 'cash-sessions.index',
+
+          component: () =>
+            import(
+              '@/views/cash-sessions/CashSessionIndexView.vue'
+            ),
+
+          meta: {
+            title: 'Riwayat Sesi Kasir',
+            roles: [
+              'owner',
+              'admin',
+            ],
+          },
+        },
+        {
+          path: 'cash-sessions/:id',
+          name: 'cash-sessions.show',
+
+          component: () =>
+            import(
+              '@/views/cash-sessions/CashSessionShowView.vue'
+            ),
+
+          meta: {
+            title: 'Detail Sesi Kasir',
+            roles: [
+              'owner',
+              'admin',
+            ],
+          },
+        },
       ],
     },
 
