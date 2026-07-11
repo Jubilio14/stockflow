@@ -170,26 +170,54 @@ function canOpenReference(
   movement: StockMovementItem,
 ): boolean {
   return (
-    movement.reference_type ===
-      'purchase' &&
-    movement.reference_id !== null
+    movement.reference_id !== null &&
+    (
+      movement.reference_type ===
+        'purchase' ||
+      movement.reference_type ===
+        'stock_adjustment'
+    )
   )
 }
 
 function openReference(
   movement: StockMovementItem,
 ): void {
-  if (!canOpenReference(movement)) {
+  if (
+    !canOpenReference(movement) ||
+    movement.reference_id === null
+  ) {
     return
   }
 
-  router.push({
-    name: 'purchases.show',
+  if (
+    movement.reference_type ===
+    'purchase'
+  ) {
+    router.push({
+      name: 'purchases.show',
 
-    params: {
-      id: movement.reference_id,
-    },
-  })
+      params: {
+        id: movement.reference_id,
+      },
+    })
+
+    return
+  }
+
+  if (
+    movement.reference_type ===
+    'stock_adjustment'
+  ) {
+    router.push({
+      name:
+        'stock-adjustments.show',
+
+      params: {
+        id: movement.reference_id,
+      },
+    })
+  }
 }
 
 function movementTypeLabel(
@@ -220,18 +248,18 @@ function referenceLabel(
 
   if (
     movement.reference_type ===
-      'sale' &&
+      'stock_adjustment' &&
     movement.reference_id
   ) {
-    return `Penjualan #${movement.reference_id}`
+    return `Penyesuaian #${movement.reference_id}`
   }
 
   if (
     movement.reference_type ===
-      'adjustment' &&
+      'sale' &&
     movement.reference_id
   ) {
-    return `Penyesuaian #${movement.reference_id}`
+    return `Penjualan #${movement.reference_id}`
   }
 
   return '-'

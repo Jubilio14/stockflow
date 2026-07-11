@@ -143,6 +143,48 @@ const router = createRouter({
             roles: ['owner', 'admin'],
           },
         },
+        {
+          path: 'stock-adjustments',
+          name: 'stock-adjustments',
+
+          component: () =>
+            import(
+              '@/views/StockAdjustmentsView.vue'
+            ),
+
+          meta: {
+            title: 'Penyesuaian Stok',
+            roles: ['owner', 'admin'],
+          },
+        },
+        {
+          path: 'stock-adjustments/create',
+          name: 'stock-adjustments.create',
+
+          component: () =>
+            import(
+              '@/views/StockAdjustmentCreateView.vue'
+            ),
+
+          meta: {
+            title: 'Catat Penyesuaian Stok',
+            roles: ['owner', 'admin'],
+          },
+        },
+        {
+          path: 'stock-adjustments/:id',
+          name: 'stock-adjustments.show',
+
+          component: () =>
+            import(
+              '@/views/StockAdjustmentDetailView.vue'
+            ),
+
+          meta: {
+            title: 'Detail Penyesuaian Stok',
+            roles: ['owner', 'admin'],
+          },
+        },
       ],
     },
 

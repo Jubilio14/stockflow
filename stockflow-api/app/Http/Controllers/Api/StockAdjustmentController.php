@@ -170,11 +170,13 @@ class StockAdjustmentController extends Controller
     public function show(
         StockAdjustment $stockAdjustment
     ): StockAdjustmentResource {
-        $stockAdjustment->load([
-            'creator:id,name',
+        $stockAdjustment
+            ->load([
+                'creator:id,name',
 
-            'items.product:id,name,sku,unit,image_path',
-        ]);
+                'items.product:id,name,sku,unit,image_path',
+            ])
+            ->loadCount('items');
 
         return new StockAdjustmentResource(
             $stockAdjustment
