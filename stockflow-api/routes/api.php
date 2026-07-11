@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CashSessionController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\DashboardOverviewController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PromotionController;
 use App\Http\Controllers\Api\PurchaseController;
@@ -183,6 +184,11 @@ Route::middleware([
     Route::get(
         '/stock-adjustments/{stockAdjustment}',
         [StockAdjustmentController::class, 'show']
+    );
+
+    Route::get(
+        '/dashboard/overview',
+        DashboardOverviewController::class
     );
 });
 
