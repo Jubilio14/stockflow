@@ -24,12 +24,26 @@ import {
 
       <nav class="cashier-navigation">
         <RouterLink
-          :to="{ name: 'cashier.session' }"
-          class="navigation-link"
+            :to="{ name: 'dashboard' }"
+            class="navigation-link"
         >
-          Sesi Kasir
+            Dashboard
         </RouterLink>
-      </nav>
+
+        <RouterLink
+            :to="{ name: 'cashier.session' }"
+            class="navigation-link"
+        >
+            Sesi Kasir
+        </RouterLink>
+
+        <RouterLink
+            :to="{ name: 'pos' }"
+            class="navigation-link pos-link"
+        >
+            Buka POS
+        </RouterLink>
+        </nav>
     </header>
 
     <main class="cashier-content">
@@ -136,13 +150,39 @@ import {
   padding: 34px 24px 50px;
 }
 
+.pos-link {
+  background: #047857;
+  color: white;
+}
+
+.pos-link:hover {
+  background: #065f46;
+  color: white;
+}
+
+.pos-link.router-link-active {
+  background: #065f46;
+  color: white;
+}
+
 @media (max-width: 650px) {
   .cashier-header {
-    padding: 0 18px;
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 14px 18px;
   }
 
   .brand small {
     display: none;
+  }
+
+  .cashier-navigation {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .navigation-link {
+    flex: 0 0 auto;
   }
 
   .cashier-content {

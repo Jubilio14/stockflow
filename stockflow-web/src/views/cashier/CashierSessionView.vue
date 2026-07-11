@@ -38,6 +38,12 @@ interface CloseSessionForm {
   closing_notes: string
 }
 
+function goToDashboard(): void {
+  router.push({
+    name: 'dashboard',
+  })
+}
+
 const router = useRouter()
 
 const currentSession =
@@ -582,17 +588,27 @@ onMounted(() => {
 <template>
   <section class="session-page">
     <header class="page-header">
-      <p class="eyebrow">
-        Cashier
-      </p>
+        <div>
+            <p class="eyebrow">
+            Cashier
+            </p>
 
-      <h1>Sesi Kasir</h1>
+            <h1>Sesi Kasir</h1>
 
-      <p>
-        Buka sesi sebelum menjalankan POS dan
-        tutup sesi setelah seluruh uang fisik
-        selesai dihitung.
-      </p>
+            <p>
+            Buka sesi sebelum menjalankan POS dan
+            tutup sesi setelah seluruh uang fisik
+            selesai dihitung.
+            </p>
+        </div>
+
+        <button
+            type="button"
+            class="back-dashboard-button"
+            @click="goToDashboard"
+        >
+            ← Kembali ke Dashboard
+        </button>
     </header>
 
     <div
@@ -1176,6 +1192,10 @@ onMounted(() => {
 }
 
 .page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
   margin-bottom: 25px;
 }
 
@@ -1199,6 +1219,29 @@ onMounted(() => {
   margin: 9px 0 0;
   color: #64748b;
   line-height: 1.6;
+}
+
+
+.back-dashboard-button {
+  min-height: 41px;
+  padding: 0 15px;
+
+  flex: 0 0 auto;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+
+  background: white;
+  color: #334155;
+
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.back-dashboard-button:hover {
+  border-color: #059669;
+  color: #047857;
+  background: #f0fdf4;
 }
 
 .state-card,
@@ -1794,6 +1837,15 @@ onMounted(() => {
 }
 
 @media (max-width: 600px) {
+
+   .page-header {
+    flex-direction: column;
+  }
+
+  .back-dashboard-button {
+    width: 100%;
+  }
+
   .session-information-grid,
   .closing-summary,
   .blocked-information {

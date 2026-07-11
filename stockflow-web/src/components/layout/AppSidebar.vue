@@ -72,7 +72,7 @@ const navigationItems: NavigationItem[] = [
   {
     label: 'Buka POS',
     routeName: 'cashier.session',
-    roles: ['owner', 'admin'],
+    roles: ['owner', 'admin', 'cashier'],
   },
   {
     label: 'Sesi Kasir',
