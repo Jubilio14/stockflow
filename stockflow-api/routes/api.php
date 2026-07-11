@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\PromotionController;
 use App\Http\Controllers\Api\PurchaseController;
 use App\Http\Controllers\Api\StockAdjustmentController;
 use App\Http\Controllers\Api\StockMovementController;
@@ -176,4 +177,63 @@ Route::middleware([
         '/stock-adjustments/{stockAdjustment}',
         [StockAdjustmentController::class, 'show']
     );
+});
+
+Route::middleware([
+    'auth:sanctum',
+    'active.user',
+])->group(function () {
+    Route::get(
+        '/promotions/available',
+        [
+            PromotionController::class,
+            'available',
+        ]
+    )->middleware(
+        'role:owner,admin,cashier'
+    );
+
+    Route::middleware(
+        'role:owner,admin'
+    )->group(function () {
+        Route::get(
+            '/promotions',
+            [
+                PromotionController::class,
+                'index',
+            ]
+        );
+
+        Route::post(
+            '/promotions',
+            [
+                PromotionController::class,
+                'store',
+            ]
+        );
+
+        Route::get(
+            '/promotions/{promotion}',
+            [
+                PromotionController::class,
+                'show',
+            ]
+        );
+
+        Route::put(
+            '/promotions/{promotion}',
+            [
+                PromotionController::class,
+                'update',
+            ]
+        );
+
+        Route::patch(
+            '/promotions/{promotion}/toggle-status',
+            [
+                PromotionController::class,
+                'toggleStatus',
+            ]
+        );
+    });
 });
