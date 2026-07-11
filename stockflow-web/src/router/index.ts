@@ -203,6 +203,69 @@ const router = createRouter({
     },
 
     {
+      path: '/cashier',
+      component: () =>
+        import(
+          '@/layouts/CashierLayout.vue'
+        ),
+
+      meta: {
+        requiresAuth: true,
+        roles: [
+          'owner',
+          'admin',
+          'cashier',
+        ],
+      },
+
+      children: [
+        {
+          path: '',
+          redirect: {
+            name: 'cashier.session',
+          },
+        },
+        {
+          path: 'session',
+          name: 'cashier.session',
+
+          component: () =>
+            import(
+              '@/views/cashier/CashierSessionView.vue'
+            ),
+
+          meta: {
+            title: 'Sesi Kasir',
+            roles: [
+              'owner',
+              'admin',
+              'cashier',
+            ],
+          },
+        },
+      ],
+    },
+    {
+      path: '/pos',
+      name: 'pos',
+
+      component: () =>
+        import(
+          '@/views/PosView.vue',
+        ),
+
+      meta: {
+        requiresAuth: true,
+        title: 'StockFlow POS',
+        roles: [
+          'owner',
+          'admin',
+          'cashier',
+        ],
+      },
+    },
+
+    {
       path: '/:pathMatch(.*)*',
       redirect: {
         name: 'dashboard',

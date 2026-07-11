@@ -69,6 +69,11 @@ const navigationItems: NavigationItem[] = [
     routeName: 'promotions',
     roles: ['owner', 'admin'],
   },
+  {
+    label: 'Buka POS',
+    routeName: 'cashier.session',
+    roles: ['owner', 'admin'],
+  },
 ]
 
 const visibleNavigationItems = computed(() => {

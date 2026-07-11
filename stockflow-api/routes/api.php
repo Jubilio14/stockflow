@@ -236,8 +236,9 @@ Route::middleware([
                 'toggleStatus',
             ]
         );
+    });
 
-        Route::middleware(
+    Route::middleware(
             'role:owner,admin,cashier'
         )->group(function () {
             Route::get(
@@ -280,5 +281,4 @@ Route::middleware([
                 ]
             );
         });
-    });
 });
